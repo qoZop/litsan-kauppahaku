@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Litsan Kauppahaku</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 50px;
+            background-color: #f4f4f4;
+        }
+        h1 {
+            color: #333;
+        }
+        input[type="text"] {
+            width: 60%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        #storeSelection {
+            text-align: left;
+            margin: 20px auto;
+            max-width: 800px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 5px 20px;
+            font-size: 14px;
+            align-items: center;
+        }
+        .store-label {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        #results {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            text-align: left;
+        }
+        #results a {
+            display: block;
+            margin: 5px 0;
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        #results a:hover {
+            text-decoration: underline;
+        }
+    </style>
+    <script>
+        const stores = [
+            { name: "Pelipeikko", url: "https://pelipeikko.fi/fi/etsi?controller=search&s=" },
+            { name: "Happy Badger", url: "https://www.happybadger.fi/search?q=", suffix: "&options%5Bprefix%5D=last" },
+            { name: "Martinex", url: "https://www.martinex.fi/catalogsearch/result/?q=" },
+            { name: "Muovitukku", url: "https://www.muovitukku.fi/?s=" },
+            { name: "Spelivinkki", url: "https://spelivinkki.fi/?s=", suffix: "&post_type=product" },
+            { name: "Tactic", url: "https://games.tactic.net/?s=", suffix: "&post_type=product" },
+            { name: "Fantasiapelit", url: "https://www.fantasiapelit.com/index.php?main=ai&mista=*&yhteen=eri&alue=&autoid=&kat=&etsittava=", suffix: "&hae=HAE" },
+            { name: "Lautapelit.fi", url: "https://www.lautapelit.fi/search/?q=" },
+            { name: "Poromagia", url: "https://lautapelit.poromagia.com/fi/search/?q=" },
+            { name: "Puolenkuun Pelit", url: "https://www.puolenkuunpelit.com/kauppa/advanced_search_result.php?keywords=" },
+            { name: "Aprikoi Games", url: "https://www.aprikoi.fi/search?q=", suffix: "&options%5Bprefix%5D=last" },
+            { name: "Lautapelikauppa.com", url: "https://lautapelikauppa.com/search?q=" },
+            { name: "Pelimies", url: "https://pelimies.fi/?s=" },
+            { name: "Tokmanni", url: "https://www.tokmanni.fi/search/?q=" },
+            { name: "Verkkokauppa.com", url: "https://www.verkkokauppa.com/fi/catalog/lautapelit?query=" },
+            { name: "K-Citymarket", url: "https://www.k-citymarket.fi/haku?q=" },
+            { name: "Prisma", url: "https://www.prisma.fi/haku?search=" },
+            { name: "AdLibris", url: "https://www.adlibris.com/fi/haku?q=" },
+            { name: "Spelexperten", url: "https://www.spelexperten.fi/cgi-bin/ibutik/AIR_ibutik.fcgi?funk=gor_sokning&AvanceradSokning=N&artnr=&varum=&artgrp=&Sprak_Suffix=FI&term=" },
+            { name: "Philibert", url: "https://www.philibertnet.com/en/search?search_query=", suffix: "&submit_search=" },
+            { name: "Hexasim", url: "https://www.hexasim.com/en/index.php?page=recherche&recherche=" },
+            { name: "FantasyWelt.de", url: "https://www.fantasywelt.de/?lang=eng#f820/brand-categories/m=and&q=" },
+            { name: "Spelspul.nl", url: "https://www.spelspul.nl/gb/#%7B%22a09532e779e7%22%3A%7B%22search_term%22%3A%22", suffix: "%22%2C%22filters%22%3A%5B%5D%2C%22sorting%22%3A%5B%5D%2C%22offsets%22%3A%7B%22category%22%3A12%2C%22product%22%3A42%7D%7D%7D" },
+            { name: "Spelshop.be", url: "https://www.spelshop.be/en/search?controller=search&order=product.position.desc&s=" }
+        ];
+
+        function generateURLs() {
+            const gameName = document.getElementById('gameInput').value.trim();
+            if (!gameName) {
+                alert("Please enter a board game name.");
+                return;
+            }
+            const encodedName = encodeURIComponent(gameName);
+            let resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = "";
+            resultsDiv.style.display = "block";
+            
+            document.querySelectorAll('.store-checkbox:checked').forEach(checkbox => {
+                const store = stores.find(s => s.name === checkbox.value);
+                let link = document.createElement('a');
+                link.href = store.url + encodedName + (store.suffix || "");
+                link.target = "_blank";
+                link.innerText = `Hae \"${gameName}\" @ ${store.name}`;
+                resultsDiv.appendChild(link);
+            });
+        }
+
+        function toggleAll(source) {
+            document.querySelectorAll('.store-checkbox').forEach(checkbox => checkbox.checked = source.checked);
+        }
+    </script>
+</head>
+<body>
+    <h1>Litsan Kauppahaku</h1>
+    <input type="text" id="gameInput" placeholder="Syötä pelin nimi" onkeypress="if(event.key === 'Enter') generateURLs()" />
+    <button onclick="generateURLs()">Hae</button>
+    <br><br>
+    <input type="checkbox" id="selectAll" onclick="toggleAll(this)" checked> Valitse kaikki<br>
+    <div id="storeSelection">
+        <script>
+            stores.forEach(store => {
+                document.write(`<label class='store-label'><input type='checkbox' class='store-checkbox' value='${store.name}' checked> ${store.name}</label>`);
+            });
+        </script>
+    </div>
+    <div id="results" style="display:none;"></div>
+</body>
+</html>
